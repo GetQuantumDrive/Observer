@@ -1,0 +1,46 @@
+name: 'Observer — PQC Compliance Scanner'
+description: >
+  Detect quantum-vulnerable cryptography (RSA, ECDSA, ECDH, DH, DSA) in your codebase
+  and enforce NIS2 / DORA / NIST FIPS 203 / FIPS 204 compliance in CI.
+author: 'GetQuantumDrive'
+branding:
+  icon: shield
+  color: black
+
+inputs:
+  rules-dir:
+    description: 'Directory containing custom YAML detection rules'
+    required: false
+    default: '.pqc/rules'
+  fail-on:
+    description: 'Fail the build when findings of this severity (or worse) are found. One of: critical, high, any, never'
+    required: false
+    default: 'critical'
+  report-url:
+    description: 'Groundstate server URL to POST the scan report to (e.g. https://app.groundstate.io)'
+    required: false
+    default: ''
+  report-token:
+    description: 'Bearer token for authenticating with the Groundstate server'
+    required: false
+    default: ''
+  output:
+    description: 'Write the scan report as a JSON file to this path (e.g. observer-report.json)'
+    required: false
+    default: ''
+
+outputs:
+  findings:
+    description: 'Total number of findings'
+  critical:
+    description: 'Number of CRITICAL findings'
+  high:
+    description: 'Number of HIGH findings'
+  compliance:
+    description: 'NIS2 compliance status: COMPLIANT | AT RISK | NON-COMPLIANT'
+  report-json:
+    description: 'Full scan report as a JSON string'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'

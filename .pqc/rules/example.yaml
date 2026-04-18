@@ -1,0 +1,15 @@
+- id: custom-internal-rsa-wrapper
+  language: java
+  pattern: 'InternalCrypto\.rsaSign\('
+  algorithm: RSA
+  severity: HIGH
+  message: "Internal RSA signing wrapper detected. RSA is quantum-vulnerable."
+  migration: "Replace with InternalCrypto.mlDsaSign() — same interface, uses ML-DSA (FIPS 204)."
+
+- id: custom-legacy-aes-ecb
+  language: java
+  pattern: '(?i)Cipher\.getInstance\s*\(\s*["'']AES/ECB'
+  algorithm: AES-ECB
+  severity: MEDIUM
+  message: "AES-ECB mode detected. ECB is not semantically secure (same plaintext → same ciphertext)."
+  migration: "Replace with AES-GCM or AES-CBC with a random IV. AES itself is quantum-safe at 256-bit key length."

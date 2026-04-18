@@ -1,0 +1,43 @@
+name: PQC Compliance Scan
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  pqc-scan:
+    name: Observer — PQC scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan for quantum-vulnerable cryptography
+        id: observer
+        uses: GetQuantumDrive/Observer@main
+        with:
+          fail-on: critical           # fail build on CRITICAL findings
+          output: observer-report.json
+          # Optional: post results to your Groundstate compliance dashboard
+          # report-url: ${{ secrets.GROUNDSTATE_URL }}
+          # report-token: ${{ secrets.GROUNDSTATE_TOKEN }}
+
+      - name: Upload scan report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: observer-report
+          path: observer-report.json
+
+      - name: Print summary
+        if: always()
+        run: |
+          echo "Findings:  ${{ steps.observer.outputs.findings }}"
+          echo "Critical:  ${{ steps.observer.outputs.critical }}"
+          echo "High:      ${{ steps.observer.outputs.high }}"
+          echo "NIS2:      ${{ steps.observer.outputs.compliance }}"
