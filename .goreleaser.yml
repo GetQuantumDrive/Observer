@@ -2,6 +2,7 @@ version: 2
 
 before:
   hooks:
+    - git submodule update --init --recursive
     - go mod tidy
 
 builds:
@@ -17,7 +18,7 @@ builds:
       - CGO_ENABLED=0
     ldflags:
       - -s -w
-      - -X github.com/getquantumdrive/observer/pkg/scanner.Version={{.Version}}
+      - -X main.cliVersion={{.Version}}
 
 archives:
   - id: observer-cli

@@ -68,7 +68,10 @@ func loadRuleFile(path string) ([]Rule, error) {
 	if err != nil {
 		return nil, err
 	}
+	return parseRuleBytes(data)
+}
 
+func parseRuleBytes(data []byte) ([]Rule, error) {
 	var yrules []yamlRule
 	if err := yaml.Unmarshal(data, &yrules); err != nil {
 		return nil, err

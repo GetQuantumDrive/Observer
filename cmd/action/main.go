@@ -36,11 +36,21 @@ func main() {
 	outputFormat    := input(a, "output-format", "json")
 
 	// Load order (last wins on duplicate rule IDs):
-	//   1. bundled rules (baked into the Docker image), if enabled
-	//   2. each entry in rules-repos, in order
-	//   3. local rules-dir / extra-rules-dir
-	var allRulesDirs []string
+	//   1. rules embedded in the binary at compile time
+	//   2. OBSERVER_BUNDLED_RULES_DIR env var (Docker hot-patch override)
+	//   3. each entry in rules-repos, in order
+	//   4. local rules-dir / extra-rules-dir
+	var baseRules []scanner.Rule
+	if useBundled {
+		embedded, err := scanner.LoadBundledRules()
+		if err != nil {
+			a.Warningf("Could not load bundled rules: %v", err)
+		} else {
+			baseRules = embedded
+		}
+	}
 
+	var allRulesDirs []string
 	if useBundled {
 		if bundled := os.Getenv("OBSERVER_BUNDLED_RULES_DIR"); bundled != "" {
 			allRulesDirs = append(allRulesDirs, bundled)
@@ -61,10 +71,11 @@ func main() {
 
 	allRulesDirs = append(allRulesDirs, rulesDir, extraRulesDir)
 
-	rules, err := scanner.LoadCustomRules(allRulesDirs...)
+	extraRules, err := scanner.LoadCustomRules(allRulesDirs...)
 	if err != nil {
 		a.Warningf("Could not load custom rules: %v", err)
 	}
+	rules := scanner.MergeRules(baseRules, extraRules)
 
 	a.Infof("Scanning %s with %d rules...", workspace, len(rules))
 
