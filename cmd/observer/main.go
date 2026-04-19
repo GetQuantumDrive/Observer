@@ -24,6 +24,7 @@ func main() {
 	var rulesDirs multiFlag
 	var rulesRepos multiFlag
 
+	version         := flag.Bool("version", false, "Print version and exit")
 	dir             := flag.String("dir", ".", "Root directory to scan")
 	failOn          := flag.String("fail-on", "critical", "Fail with exit code 1 when findings at this level or worse are found (critical|high|any|never)")
 	output          := flag.String("output", "", "Write JSON report to this file path (default: stdout)")
@@ -40,12 +41,27 @@ func main() {
 
 	flag.Parse()
 
-	// Load order (last wins on duplicate rule IDs):
-	//   1. bundled rules dir (baked into Docker image), if enabled
-	//   2. each --rules-repo in order
-	//   3. local --rules-dir entries
-	var allRulesDirs []string
+	if *version {
+		fmt.Println(cliVersion)
+		os.Exit(0)
+	}
 
+	// Load order (last wins on duplicate rule IDs):
+	//   1. rules embedded in the binary at compile time
+	//   2. OBSERVER_BUNDLED_RULES_DIR env var (Docker hot-patch override)
+	//   3. each --rules-repo in order
+	//   4. local --rules-dir entries
+	var baseRules []scanner.Rule
+	if *useBundled {
+		embedded, err := scanner.LoadBundledRules()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "warning: could not load bundled rules: %v\n", err)
+		} else {
+			baseRules = embedded
+		}
+	}
+
+	var allRulesDirs []string
 	if *useBundled {
 		if bundled := os.Getenv("OBSERVER_BUNDLED_RULES_DIR"); bundled != "" {
 			allRulesDirs = append(allRulesDirs, bundled)
@@ -62,10 +78,11 @@ func main() {
 
 	allRulesDirs = append(allRulesDirs, rulesDirs...)
 
-	rules, err := scanner.LoadCustomRules(allRulesDirs...)
+	extraRules, err := scanner.LoadCustomRules(allRulesDirs...)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "warning: could not load custom rules: %v\n", err)
 	}
+	rules := scanner.MergeRules(baseRules, extraRules)
 
 	report, err := scanner.Scan(*dir, rules)
 	if err != nil {

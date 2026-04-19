@@ -1,0 +1,90 @@
+- id: java-rsa-keygen
+  language: java
+  pattern: |-
+    KeyPairGenerator\.getInstance\s*\(\s*["']RSA["']
+  algorithm: RSA
+  quantum_threat: shor-broken
+  primitive: asymmetric-encryption
+  message: "RSA key generation detected; vulnerable to Shor's algorithm."
+  migration: "Replace with ML-KEM (CRYSTALS-Kyber, FIPS 203) for key encapsulation or ML-DSA (CRYSTALS-Dilithium, FIPS 204) for signatures."
+
+- id: java-rsa-cipher
+  language: java
+  pattern: |-
+    Cipher\.getInstance\s*\(\s*["']RSA
+  algorithm: RSA
+  quantum_threat: shor-broken
+  primitive: asymmetric-encryption
+  message: "RSA cipher instantiation detected; vulnerable to Shor's algorithm."
+  migration: "Replace with ML-KEM (CRYSTALS-Kyber, FIPS 203)."
+
+- id: java-ecdh-agreement
+  language: java
+  pattern: |-
+    KeyAgreement\.getInstance\s*\(\s*["']ECDH["']
+  algorithm: ECDH
+  quantum_threat: shor-broken
+  primitive: key-exchange
+  message: "ECDH key agreement detected; vulnerable to Shor's algorithm."
+  migration: "Replace with ML-KEM (CRYSTALS-Kyber, FIPS 203)."
+
+- id: java-ec-keygen
+  language: java
+  pattern: |-
+    KeyPairGenerator\.getInstance\s*\(\s*["']EC["']
+  algorithm: ECDSA
+  quantum_threat: shor-broken
+  primitive: signature
+  message: "EC key generation detected; ECDSA/ECDH is vulnerable to Shor's algorithm."
+  migration: "Replace with ML-DSA (CRYSTALS-Dilithium, FIPS 204)."
+
+- id: java-sha1-sig
+  language: java
+  pattern: |-
+    Signature\.getInstance\s*\(\s*["']SHA1with
+  algorithm: SHA1withRSA/ECDSA
+  quantum_threat: classical-broken
+  primitive: signature
+  severity: CRITICAL
+  message: "SHA-1 signature detected; SHA-1 is classically broken and the underlying asymmetric primitive is quantum-vulnerable."
+  migration: "Replace immediately with ML-DSA (CRYSTALS-Dilithium, FIPS 204)."
+
+- id: java-dsa-keygen
+  language: java
+  pattern: |-
+    KeyPairGenerator\.getInstance\s*\(\s*["']DSA["']
+  algorithm: DSA
+  quantum_threat: shor-broken
+  primitive: signature
+  message: "DSA key generation detected; DSA is vulnerable to Shor's algorithm and retired by NIST."
+  migration: "Replace with ML-DSA (CRYSTALS-Dilithium, FIPS 204)."
+
+- id: java-dh-keygen
+  language: java
+  pattern: |-
+    KeyPairGenerator\.getInstance\s*\(\s*["']DH["']
+  algorithm: DH
+  quantum_threat: shor-broken
+  primitive: key-exchange
+  message: "Diffie-Hellman key generation detected; vulnerable to Shor's algorithm."
+  migration: "Replace with ML-KEM (CRYSTALS-Kyber, FIPS 203)."
+
+- id: java-bc-rsa-params
+  language: java
+  pattern: |-
+    RSAKeyGenerationParameters|RSAPrivateCrtKeyParameters
+  algorithm: RSA
+  quantum_threat: shor-broken
+  primitive: asymmetric-encryption
+  message: "Bouncy Castle RSA key parameter class detected."
+  migration: "Replace with Bouncy Castle's post-quantum KEM classes or ML-KEM (FIPS 203)."
+
+- id: java-bc-ecdh
+  language: java
+  pattern: |-
+    ECDHBasicAgreement|ECDHCBasicAgreement
+  algorithm: ECDH
+  quantum_threat: shor-broken
+  primitive: key-exchange
+  message: "Bouncy Castle ECDH agreement class detected."
+  migration: "Replace with Bouncy Castle's ML-KEM implementation (FIPS 203)."

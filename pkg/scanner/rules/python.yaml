@@ -1,0 +1,50 @@
+- id: python-rsa-generate
+  language: python
+  pattern: |-
+    rsa\.generate_private_key|RSA\.generate|generate_private_key.*rsa
+  algorithm: RSA
+  quantum_threat: shor-broken
+  primitive: asymmetric-encryption
+  message: "RSA key generation detected; vulnerable to Shor's algorithm."
+  migration: "Replace with ML-KEM (FIPS 203) or ML-DSA (FIPS 204) using the cryptography library's post-quantum primitives."
+
+- id: python-ec-generate
+  language: python
+  pattern: |-
+    ec\.generate_private_key|ECDH\(|ECDSA\(
+  algorithm: ECDSA/ECDH
+  quantum_threat: shor-broken
+  primitive: signature
+  message: "EC key generation or usage detected; ECDSA/ECDH is vulnerable to Shor's algorithm."
+  migration: "Replace with ML-KEM (FIPS 203) for key encapsulation or ML-DSA (FIPS 204) for signatures."
+
+- id: python-rsa-import
+  language: python
+  pattern: |-
+    from cryptography.*import.*RSA|import rsa\b
+  algorithm: RSA
+  quantum_threat: shor-broken
+  primitive: asymmetric-encryption
+  severity: MEDIUM
+  message: "RSA module import detected; verify usage is not in key-exchange or signing path."
+  migration: "Audit all usages and replace quantum-vulnerable operations with ML-KEM (FIPS 203) or ML-DSA (FIPS 204) equivalents."
+
+- id: python-paramiko-rsa
+  language: python
+  pattern: |-
+    paramiko\.RSAKey|RSAKey\.generate
+  algorithm: RSA
+  quantum_threat: shor-broken
+  primitive: key-exchange
+  message: "Paramiko RSA key detected; SSH RSA keys are quantum-vulnerable."
+  migration: "Migrate to Ed25519 in the short term; plan for post-quantum SSH once RFC 9409 implementations mature."
+
+- id: python-pycrypto-rsa
+  language: python
+  pattern: |-
+    from Crypto\.PublicKey import RSA|Crypto\.PublicKey\.RSA
+  algorithm: RSA
+  quantum_threat: shor-broken
+  primitive: asymmetric-encryption
+  message: "PyCryptodome RSA import detected."
+  migration: "Replace with ML-KEM (FIPS 203) for key encapsulation or ML-DSA (FIPS 204) for signatures."

@@ -1,0 +1,81 @@
+- id: js-webcrypto-rsa-ec
+  language: javascript
+  pattern: |-
+    crypto\.subtle\.generateKey.*["'](RSA|EC)
+  algorithm: RSA/EC
+  quantum_threat: shor-broken
+  primitive: key-exchange
+  message: "Web Crypto API RSA or EC key generation detected; quantum-vulnerable."
+  migration: "Plan migration to post-quantum primitives when WebCrypto adds ML-KEM/ML-DSA support."
+
+- id: js-jose-jwt
+  language: javascript
+  pattern: |-
+    new SignJWT|jose\.jwtSign
+  algorithm: RSA/EC (JWT)
+  quantum_threat: shor-broken
+  primitive: signature
+  severity: MEDIUM
+  message: "JOSE/JWT signing detected; RS256/ES256 rely on quantum-vulnerable primitives."
+  migration: "Audit JWT algorithm in use; plan migration to post-quantum signature schemes."
+
+- id: js-node-crypto-rsa
+  language: javascript
+  pattern: |-
+    crypto\.generateKeyPair\s*\(\s*["']rsa["']
+  algorithm: RSA
+  quantum_threat: shor-broken
+  primitive: asymmetric-encryption
+  message: "Node.js crypto RSA key pair generation detected."
+  migration: "Replace with ML-KEM (FIPS 203) once Node.js gains support, or use a WASM shim."
+
+- id: js-node-crypto-ec
+  language: javascript
+  pattern: |-
+    crypto\.generateKeyPair\s*\(\s*["']ec["']
+  algorithm: ECDSA/ECDH
+  quantum_threat: shor-broken
+  primitive: signature
+  message: "Node.js crypto EC key pair generation detected."
+  migration: "Replace with ML-KEM (FIPS 203) for key encapsulation or ML-DSA (FIPS 204) for signatures."
+
+- id: ts-webcrypto-rsa-ec
+  language: typescript
+  pattern: |-
+    crypto\.subtle\.generateKey.*["'](RSA|EC)
+  algorithm: RSA/EC
+  quantum_threat: shor-broken
+  primitive: key-exchange
+  message: "Web Crypto API RSA or EC key generation detected; quantum-vulnerable."
+  migration: "Plan migration to post-quantum primitives when WebCrypto adds ML-KEM/ML-DSA support."
+
+- id: ts-jose-jwt
+  language: typescript
+  pattern: |-
+    new SignJWT|jose\.jwtSign
+  algorithm: RSA/EC (JWT)
+  quantum_threat: shor-broken
+  primitive: signature
+  severity: MEDIUM
+  message: "JOSE/JWT signing detected; RS256/ES256 rely on quantum-vulnerable primitives."
+  migration: "Audit JWT algorithm in use; plan migration to post-quantum signature schemes."
+
+- id: ts-node-crypto-rsa
+  language: typescript
+  pattern: |-
+    crypto\.generateKeyPair\s*\(\s*["']rsa["']
+  algorithm: RSA
+  quantum_threat: shor-broken
+  primitive: asymmetric-encryption
+  message: "Node.js crypto RSA key pair generation detected."
+  migration: "Replace with ML-KEM (FIPS 203) once Node.js gains support, or use a WASM shim."
+
+- id: ts-node-crypto-ec
+  language: typescript
+  pattern: |-
+    crypto\.generateKeyPair\s*\(\s*["']ec["']
+  algorithm: ECDSA/ECDH
+  quantum_threat: shor-broken
+  primitive: signature
+  message: "Node.js crypto EC key pair generation detected."
+  migration: "Replace with ML-KEM (FIPS 203) for key encapsulation or ML-DSA (FIPS 204) for signatures."
