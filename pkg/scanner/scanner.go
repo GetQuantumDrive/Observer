@@ -2,6 +2,7 @@ package scanner
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,6 +23,7 @@ func Scan(root string, rules []Rule) (ScanReport, error) {
 	start := time.Now()
 	var findings []Finding
 	filesScanned := 0
+	today := time.Now().UTC()
 
 	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
@@ -41,7 +43,7 @@ func Scan(root string, rules []Rule) (ScanReport, error) {
 
 		filesScanned++
 		relPath, _ := filepath.Rel(root, path)
-		ff, readErr := scanFile(relPath, path, lang, rules)
+		ff, readErr := scanFile(relPath, path, lang, rules, today)
 		if readErr != nil {
 			return nil
 		}
@@ -50,6 +52,15 @@ func Scan(root string, rules []Rule) (ScanReport, error) {
 	})
 	if err != nil {
 		return ScanReport{}, err
+	}
+
+	// Apply .observer.yml config exemptions across all findings after collection.
+	// Inline (in-file) exemptions are already applied per-file inside scanFile.
+	if exemptions, exErr := LoadConfigExemptions(root); exErr != nil {
+		// Invalid .observer.yml — surface via stderr; do not suppress.
+		fmt.Fprintf(os.Stderr, "warning: %v\n", exErr)
+	} else if len(exemptions) > 0 {
+		findings = applyConfig(findings, exemptions, today)
 	}
 
 	risk := computeRiskSummary(findings)
@@ -65,7 +76,7 @@ func Scan(root string, rules []Rule) (ScanReport, error) {
 	}, nil
 }
 
-func scanFile(relPath, absPath string, lang Language, rules []Rule) ([]Finding, error) {
+func scanFile(relPath, absPath string, lang Language, rules []Rule, today time.Time) ([]Finding, error) {
 	f, err := os.Open(absPath)
 	if err != nil {
 		return nil, err
@@ -74,6 +85,8 @@ func scanFile(relPath, absPath string, lang Language, rules []Rule) ([]Finding, 
 
 	var lines []string
 	sc := bufio.NewScanner(f)
+	// Raise buffer to handle generated files with long lines.
+	sc.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 	for sc.Scan() {
 		lines = append(lines, sc.Text())
 	}
@@ -89,17 +102,29 @@ func scanFile(relPath, absPath string, lang Language, rules []Rule) ([]Finding, 
 		for i, line := range lines {
 			if rule.Pattern.MatchString(line) {
 				findings = append(findings, Finding{
-					RuleID:     rule.ID,
-					File:       relPath,
-					Line:       i + 1,
-					Algorithm:  rule.Algorithm,
-					Severity:   rule.Severity,
-					Confidence: 8,
-					Snippet:    extractSnippet(lines, i),
-					Message:    rule.Message,
-					Migration:  rule.Migration,
+					RuleID:        rule.ID,
+					File:          relPath,
+					Line:          i + 1,
+					Algorithm:     rule.Algorithm,
+					Severity:      rule.Severity,
+					Confidence:    8,
+					Snippet:       extractSnippet(lines, i),
+					Message:       rule.Message,
+					Migration:     rule.Migration,
+					QuantumThreat: rule.QuantumThreat,
+					Primitive:     rule.Primitive,
+					Composition:   rule.Composition,
+					Status:        StatusActive,
 				})
 			}
+		}
+	}
+
+	// Apply inline observer:ignore annotations present in this file.
+	if len(findings) > 0 {
+		annotations := scanInlineAnnotations(lines)
+		if len(annotations) > 0 {
+			findings = applyInline(findings, annotations, today)
 		}
 	}
 	return findings, nil
@@ -118,8 +143,16 @@ func extractSnippet(lines []string, center int) string {
 }
 
 func computeRiskSummary(findings []Finding) RiskSummary {
-	r := RiskSummary{Total: len(findings)}
+	r := RiskSummary{
+		Total:           len(findings),
+		ByQuantumThreat: map[QuantumThreat]int{},
+		ByPrimitive:     map[Primitive]int{},
+	}
 	for _, f := range findings {
+		if f.Status == StatusExempted {
+			r.Exempted++
+			continue // exempted findings don't count toward severity rollup
+		}
 		switch f.Severity {
 		case SeverityCritical:
 			r.Critical++
@@ -129,8 +162,16 @@ func computeRiskSummary(findings []Finding) RiskSummary {
 			r.Medium++
 		case SeverityLow:
 			r.Low++
+		case SeverityInfo:
+			r.Info++
 		case SeveritySafe:
 			r.Safe++
+		}
+		if f.QuantumThreat != "" {
+			r.ByQuantumThreat[f.QuantumThreat]++
+		}
+		if f.Primitive != "" {
+			r.ByPrimitive[f.Primitive]++
 		}
 	}
 	return r

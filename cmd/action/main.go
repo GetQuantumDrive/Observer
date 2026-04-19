@@ -1,17 +1,20 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
 	"strconv"
-	"time"
+	"strings"
 
-	"github.com/getquantumdrive/observer/internal/scanner"
+	"github.com/getquantumdrive/observer/pkg/groundstate"
+	"github.com/getquantumdrive/observer/pkg/report/sarif"
+	"github.com/getquantumdrive/observer/pkg/scanner"
 	gha "github.com/sethvargo/go-githubactions"
 )
+
+// cliVersion is the Observer Action version; overridden at release time via -ldflags.
+var cliVersion = "dev"
 
 func main() {
 	a := gha.New()
@@ -21,18 +24,47 @@ func main() {
 		workspace = "."
 	}
 
-	rulesDir := input(a, "rules-dir", ".pqc/rules")
-	failOn := input(a, "fail-on", "critical")
-	reportURL := a.GetInput("report-url")
-	reportToken := a.GetInput("report-token")
-	outputFile := a.GetInput("output")
+	rulesReposRaw   := a.GetInput("rules-repos")
+	rulesReposToken := a.GetInput("rules-repos-token")
+	useBundled      := input(a, "use-bundled-rules", "true") != "false"
+	rulesDir        := a.GetInput("rules-dir")
+	extraRulesDir   := a.GetInput("extra-rules-dir")
+	failOn          := input(a, "fail-on", "critical")
+	reportURL       := a.GetInput("report-url")
+	reportToken     := a.GetInput("report-token")
+	outputFile      := a.GetInput("output")
+	outputFormat    := input(a, "output-format", "json")
 
-	rules := scanner.BuiltInRules()
-	custom, err := scanner.LoadCustomRules(rulesDir)
-	if err != nil {
-		a.Warningf("Could not load custom rules from %s: %v", rulesDir, err)
+	// Load order (last wins on duplicate rule IDs):
+	//   1. bundled rules (baked into the Docker image), if enabled
+	//   2. each entry in rules-repos, in order
+	//   3. local rules-dir / extra-rules-dir
+	var allRulesDirs []string
+
+	if useBundled {
+		if bundled := os.Getenv("OBSERVER_BUNDLED_RULES_DIR"); bundled != "" {
+			allRulesDirs = append(allRulesDirs, bundled)
+		}
 	}
-	rules = append(rules, custom...)
+
+	for _, line := range strings.Split(rulesReposRaw, "\n") {
+		repo := strings.TrimSpace(line)
+		if repo == "" {
+			continue
+		}
+		if d, err := scanner.FetchRulesFromGitHub(repo, rulesReposToken); err != nil {
+			a.Warningf("Could not fetch rules from %s: %v", repo, err)
+		} else {
+			allRulesDirs = append(allRulesDirs, d)
+		}
+	}
+
+	allRulesDirs = append(allRulesDirs, rulesDir, extraRulesDir)
+
+	rules, err := scanner.LoadCustomRules(allRulesDirs...)
+	if err != nil {
+		a.Warningf("Could not load custom rules: %v", err)
+	}
 
 	a.Infof("Scanning %s with %d rules...", workspace, len(rules))
 
@@ -63,13 +95,32 @@ func main() {
 		}
 	}
 
-	// Write JSON report file.
+	// Canonical JSON is always produced — Groundstate and action outputs consume it.
 	reportJSON, _ := json.MarshalIndent(report, "", "  ")
+
+	// File output honors output-format. SARIF is the right choice for users who
+	// want to upload via github/codeql-action/upload-sarif to Code Scanning.
 	if outputFile != "" {
-		if err := os.WriteFile(outputFile, reportJSON, 0o644); err != nil {
+		var outputBytes []byte
+		switch outputFormat {
+		case "json":
+			outputBytes = reportJSON
+		case "sarif":
+			sb, err := sarif.Render(report, cliVersion)
+			if err != nil {
+				a.Warningf("Could not render SARIF: %v", err)
+				outputBytes = reportJSON
+			} else {
+				outputBytes = sb
+			}
+		default:
+			a.Warningf("Unknown output-format %q (want: json|sarif); writing json", outputFormat)
+			outputBytes = reportJSON
+		}
+		if err := os.WriteFile(outputFile, outputBytes, 0o644); err != nil {
 			a.Warningf("Could not write report to %s: %v", outputFile, err)
 		} else {
-			a.Infof("Report written to %s", outputFile)
+			a.Infof("Report written to %s (%s)", outputFile, outputFormat)
 		}
 	}
 
@@ -82,7 +133,7 @@ func main() {
 
 	// POST to Groundstate if configured.
 	if reportURL != "" {
-		if err := postReport(reportURL, reportToken, reportJSON); err != nil {
+		if err := groundstate.PostReport(reportURL, reportToken, reportJSON); err != nil {
 			a.Warningf("Could not post report to %s: %v", reportURL, err)
 		} else {
 			a.Infof("Report posted to %s", reportURL)
@@ -91,7 +142,7 @@ func main() {
 
 	// Step summary.
 	a.AddStepSummary(fmt.Sprintf(
-		"## Observer — PQC Scan Results\n\n"+
+		"## Observer - PQC Scan Results\n\n"+
 			"| | |\n|---|---|\n"+
 			"| Files scanned | %d |\n"+
 			"| Total findings | %d |\n"+
@@ -137,25 +188,4 @@ func input(a *gha.Action, name, def string) string {
 		return v
 	}
 	return def
-}
-
-func postReport(url, token string, body []byte) error {
-	client := &http.Client{Timeout: 30 * time.Second}
-	req, err := http.NewRequest(http.MethodPost, url+"/api/reports", bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	if token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode >= 400 {
-		return fmt.Errorf("server returned %d", resp.StatusCode)
-	}
-	return nil
 }

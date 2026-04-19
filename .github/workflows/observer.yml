@@ -5,10 +5,10 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
-
+ 
 jobs:
   pqc-scan:
-    name: Observer — PQC scan
+    name: Observer - PQC scan
     runs-on: ubuntu-latest
     permissions:
       contents: read

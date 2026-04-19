@@ -1,0 +1,36 @@
+name: CI - Go
+
+on:
+  push:
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'cmd/**'
+      - 'pkg/**'
+  pull_request:
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'cmd/**'
+      - 'pkg/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build action binary
+        run: go build ./cmd/action
+
+      - name: Build observer CLI binary
+        run: go build ./cmd/observer
+
+      - name: Run tests
+        run: go test ./...
