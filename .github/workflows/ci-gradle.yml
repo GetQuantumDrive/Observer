@@ -29,6 +29,10 @@ jobs:
         run: |
           go build -o /tmp/observer-bin ./cmd/observer
           echo "OBSERVER_BINARY_OVERRIDE=/tmp/observer-bin" >> $GITHUB_ENV
+      
+      - name: Make gradlew executable
+        working-directory: plugins/gradle
+        run: chmod +x gradlew
 
       - name: Run unit tests
         working-directory: plugins/gradle
