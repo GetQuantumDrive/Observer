@@ -41,21 +41,35 @@ cd plugins/gradle
 ## Adding a new detection rule
 
 1. Open an issue in [Observer-rules](https://github.com/GetQuantumDrive/Observer-rules/issues/new) with the algorithm, language, and a minimal code sample.
-2. Follow the YAML schema including `quantum_threat` and `primitive` — both are required. See the [taxonomy table](README.md#taxonomy) for valid values.
+2. Follow the YAML schema including `quantum_threat` and `primitive`; both are required. See the [taxonomy table](README.md#taxonomy) for valid values.
 3. Add a test fixture that triggers (and does not trigger when suppressed).
 
 ## Adding a new language
 
-Language support is a scanner change (here, not Observer-rules).
+No scanner change is required. Any rule set can add support for a new language by declaring an `extensions` field on at least one rule for that language. Observer builds the file-extension map from loaded rules at startup, so the new language is recognized as soon as rules that declare it are loaded.
 
-1. Add a file extension → `Language` mapping in `pkg/scanner/types.go`.
-2. Add rules for that language to Observer-rules.
-3. Update the README's *Supported languages* section.
+Example: to add Ruby support, publish a rules repo with at least one rule like this:
+
+```yaml
+- id: ruby-openssl-rsa
+  language: ruby
+  extensions: [.rb, .rake]
+  pattern: 'OpenSSL::PKey::RSA\.new'
+  quantum_threat: shor-broken
+  primitive: signature
+  algorithm: RSA
+  message: "RSA key via OpenSSL is quantum-vulnerable."
+  migration: "Replace with an ML-DSA signing library."
+```
+
+Every other rule for `language: ruby` in the same (or any layered) rule set will automatically apply to `.rb` and `.rake` files once the extension mapping is established by the first loaded rule.
+
+The five built-in languages (Java, Python, JavaScript, TypeScript, Go) have their extension mappings compiled into the binary and cannot be overridden by rules - only new extensions can be added this way.
 
 ## Code style
 
 - Run `go vet ./...` and `gofmt -s -w .` before pushing.
-- Keep comments load-bearing — explain *why*, not *what*.
+- Keep comments load-bearing: explain *why*, not *what*.
 - Don't add speculative configuration or error handling for scenarios that can't happen.
 
 ## Pull requests
@@ -63,7 +77,7 @@ Language support is a scanner change (here, not Observer-rules).
 - Target the `main` branch.
 - Include tests for new behavior, especially scanner / exemption / SARIF changes.
 - Reference an issue in the description when one exists.
-- Sign off commits with `git commit -s` (DCO) — we require this for all contributions.
+- Sign off commits with `git commit -s` (DCO); we require this for all contributions.
 
 ## Release process (maintainers)
 

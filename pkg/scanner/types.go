@@ -42,37 +42,37 @@ func SeverityRank(s Severity) int {
 type QuantumThreat string
 
 const (
-	// ThreatClassicalBroken — algorithms already broken by classical attacks
+	// ThreatClassicalBroken - algorithms already broken by classical attacks
 	// (MD5, SHA-1, DES, 3DES, RC4, RSA<2048, DH<2048).
 	ThreatClassicalBroken QuantumThreat = "classical-broken"
 
-	// ThreatShorBroken — factoring/DLP-based asymmetric crypto fully broken by
+	// ThreatShorBroken - factoring/DLP-based asymmetric crypto fully broken by
 	// a CRQC via Shor's algorithm (RSA, DH, ECDH, ECDSA, EdDSA, any size).
 	// HNDL ("harvest now, decrypt later") applies to confidentiality uses.
 	ThreatShorBroken QuantumThreat = "shor-broken"
 
-	// ThreatGroverReduced — symmetric primitives whose effective security is
+	// ThreatGroverReduced - symmetric primitives whose effective security is
 	// halved by Grover's algorithm (AES-128, SHA-256 in collision contexts).
 	// Severity depends on data lifetime.
 	ThreatGroverReduced QuantumThreat = "grover-reduced"
 
-	// ThreatGroverSafe — symmetric primitives with no meaningful reduction
+	// ThreatGroverSafe - symmetric primitives with no meaningful reduction
 	// under Grover (AES-256, SHA-384/512, SHA-3).
 	ThreatGroverSafe QuantumThreat = "grover-safe"
 
-	// ThreatPQCStandardized — NIST FIPS 203/204/205 and SP 800-208 (ML-KEM,
+	// ThreatPQCStandardized - NIST FIPS 203/204/205 and SP 800-208 (ML-KEM,
 	// ML-DSA, SLH-DSA, LMS/XMSS). Compliant.
 	ThreatPQCStandardized QuantumThreat = "pqc-standardized"
 
-	// ThreatPQCExperimental — PQC candidates in the NIST process but not yet
+	// ThreatPQCExperimental - PQC candidates in the NIST process but not yet
 	// standardized (HQC, BIKE, Classic McEliece). Research / hybrid only.
 	ThreatPQCExperimental QuantumThreat = "pqc-experimental"
 
-	// ThreatPQCBroken — tried-and-broken PQC candidates (SIKE, Rainbow, GeMSS).
+	// ThreatPQCBroken - tried-and-broken PQC candidates (SIKE, Rainbow, GeMSS).
 	// Critical regardless of context.
 	ThreatPQCBroken QuantumThreat = "pqc-broken"
 
-	// ThreatUnknown — classification cannot be determined statically (e.g. a
+	// ThreatUnknown - classification cannot be determined statically (e.g. a
 	// cipher name sourced from user input). Needs human review.
 	ThreatUnknown QuantumThreat = "unknown"
 )
@@ -89,7 +89,7 @@ func ValidQuantumThreats() []QuantumThreat {
 }
 
 // Primitive classifies a rule/finding by the cryptographic primitive it targets.
-// Orthogonal to QuantumThreat — used for reporting and filtering.
+// Orthogonal to QuantumThreat - used for reporting and filtering.
 type Primitive string
 
 const (
@@ -155,9 +155,10 @@ const (
 type Rule struct {
 	ID            string
 	Language      string
+	Extensions    []string      // file extensions that map to Language (e.g. [".rb", ".rake"])
 	Pattern       *regexp.Regexp
 	Algorithm     string
-	Severity      Severity      // optional — derived from QuantumThreat if empty
+	Severity      Severity      // optional - derived from QuantumThreat if empty
 	Message       string
 	Migration     string
 	QuantumThreat QuantumThreat // required
