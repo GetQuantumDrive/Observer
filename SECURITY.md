@@ -38,7 +38,7 @@ In scope:
 Out of scope:
 - Vulnerabilities in third-party rules loaded from user-supplied repos (report those to the rule repo maintainer).
 - Vulnerabilities in Groundstate (report at https://github.com/GetQuantumDrive/Groundstate/security).
-- Issues that require a malicious user-controlled `.observer.yml` *and* the user choosing to run Observer on untrusted code as themselves — use sandboxing for untrusted scans.
+- Issues that require a malicious user-controlled `.observer.yml` *and* the user choosing to run Observer on untrusted code as themselves; use sandboxing for untrusted scans.
 
 ## Coordinated disclosure
 

@@ -106,7 +106,7 @@ func main() {
 		}
 	}
 
-	// Canonical JSON is always produced — Groundstate and action outputs consume it.
+	// Canonical JSON is always produced; Groundstate and action outputs consume it.
 	reportJSON, _ := json.MarshalIndent(report, "", "  ")
 
 	// File output honors output-format. SARIF is the right choice for users who

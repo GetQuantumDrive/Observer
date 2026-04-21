@@ -4,7 +4,7 @@
 
 > *Observe before you're observed.*
 
-A post-quantum cryptography scanner for modern CI. Detects quantum-vulnerable crypto, classifies each finding by the threat that breaks it, and produces reports that drop into GitHub Code Scanning, SonarQube, or [Groundstate](https://github.com/GetQuantumDrive/Groundstate) — all without the source code leaving your pipeline.
+A post-quantum cryptography scanner for modern CI. Detects quantum-vulnerable crypto, classifies each finding by the threat that breaks it, and produces reports that drop into GitHub Code Scanning, SonarQube, or [Groundstate](https://github.com/GetQuantumDrive/Groundstate) - all without the source code leaving your pipeline.
 
 [![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](LICENSE)
 [![SARIF 2.1.0](https://img.shields.io/badge/SARIF-2.1.0-green.svg)](#output-formats)
@@ -15,9 +15,9 @@ A post-quantum cryptography scanner for modern CI. Detects quantum-vulnerable cr
 
 The harvest-now-decrypt-later (HNDL) threat is not theoretical: RSA and ECC protecting data *today* will be broken by a cryptographically relevant quantum computer (CRQC). NIS2 (Article 21), DORA (Article 9), and NIST's FIPS 203/204/205 all require inventory and a migration plan now.
 
-Real companies have mixed crypto: internal services migrate to PQC, but SWIFT, partner APIs, and legacy tools stay classical. Observer is built for this reality — it finds every usage, classifies it by quantum threat, and lets you suppress exceptions with audit metadata instead of pretending they don't exist.
+Real companies have mixed crypto: internal services migrate to PQC, but SWIFT, partner APIs, and legacy tools stay classical. Observer is built for this reality: it finds every usage, classifies it by quantum threat, and lets you suppress exceptions with audit metadata instead of pretending they don't exist.
 
-## Quickstart — GitHub Action
+## Quickstart - GitHub Action
 
 ```yaml
 - uses: GetQuantumDrive/Observer@v0.1.0
@@ -25,9 +25,9 @@ Real companies have mixed crypto: internal services migrate to PQC, but SWIFT, p
     fail-on: critical
 ```
 
-Scans every push and PR, annotates vulnerable lines, fails the build on critical findings. Default rules are bundled into the Docker image — zero network on the default path.
+Scans every push and PR, annotates vulnerable lines, fails the build on critical findings. Default rules are bundled into the Docker image, zero network on the default path.
 
-## Quickstart — Gradle plugin
+## Quickstart - Gradle plugin
 
 ```kotlin
 plugins {
@@ -41,10 +41,10 @@ observer {
 
 Then: `./gradlew observerScan`. The plugin downloads the Observer binary on first run (checksum-verified, cached under `~/.gradle/caches/observer/`).
 
-## Quickstart — standalone CLI
+## Quickstart - standalone CLI
 
 ```bash
-# Docker (recommended — bundled rules, no setup)
+# Docker (recommended - bundled rules, no setup)
 docker run --rm -v $PWD:/src ghcr.io/getquantumdrive/observer:0.1.0 --dir /src
 
 # Native
@@ -73,9 +73,25 @@ Every rule and finding carries three orthogonal fields, answering *what breaks i
 
 ## Rules
 
-Default rules live in [GetQuantumDrive/Observer-rules](https://github.com/GetQuantumDrive/Observer-rules) and are baked into the Docker image at release time. You can layer your own rules on top via a GitHub repo or a local directory.
+Observer ships with a set of detection rules compiled directly into the binary using Go's embed mechanism. There are no network requests on the default scan path - no git submodule, no download at runtime. All three integrations (GitHub Action, Gradle plugin, standalone CLI) include these bundled rules automatically.
 
-### Project-local rules
+The community-maintained rule set in [GetQuantumDrive/Observer-rules](https://github.com/GetQuantumDrive/Observer-rules) is additionally baked into the Docker image at release time. Either way, you get coverage from the first run with zero extra setup.
+
+You can layer your own rules on top via a local directory or a remote GitHub repository.
+
+### Rule priority
+
+Rules are merged in this order (later entries win on duplicate IDs):
+
+1. Rules compiled into the binary
+2. Rules from `rules-repos` / `--rules-repo` entries (fetched from GitHub, cached locally for 24 hours)
+3. Rules from `rules-dir` / `--rules-dir` local directories
+
+A custom rule that shares an `id` with a bundled rule replaces it. Rules with unique IDs are additive.
+
+### Rule format
+
+Create one or more YAML files in a directory of your choice:
 
 `.pqc/rules/internal.yaml`:
 
@@ -87,34 +103,94 @@ Default rules live in [GetQuantumDrive/Observer-rules](https://github.com/GetQua
   quantum_threat: shor-broken
   primitive: signature
   message: "Internal RSA signing wrapper is quantum-vulnerable."
-  migration: "Replace with InternalCrypto.mlDsaSign() — same interface, ML-DSA."
+  migration: "Replace with InternalCrypto.mlDsaSign() (same interface, ML-DSA)."
 ```
 
 Severity is derived from `quantum_threat` + `primitive`; override it with an explicit `severity:` field if needed.
 
-### Org-wide rules repo
+### Adding local rules
+
+Point the integration at the directory containing your YAML files.
+
+**GitHub Action:**
+
+```yaml
+- uses: GetQuantumDrive/Observer@v0.1.0
+  with:
+    rules-dir: .pqc/rules
+```
+
+**Gradle plugin:**
+
+```kotlin
+observer {
+    rulesDir.set(".pqc/rules")
+}
+```
+
+**Standalone CLI:**
+
+```bash
+observer --dir . --rules-dir .pqc/rules
+```
+
+### Adding a remote rules repo
+
+Host your rules in any GitHub repository and reference it by `owner/repo`. An optional `@ref` pins a specific branch, tag, or commit.
+
+**GitHub Action:**
+
+```yaml
+- uses: GetQuantumDrive/Observer@v0.1.0
+  with:
+    rules-repos: myorg/pqc-rules@v1.0
+    rules-repos-token: ${{ secrets.RULES_TOKEN }}
+```
+
+Multiple repos, one per line:
 
 ```yaml
 - uses: GetQuantumDrive/Observer@v0.1.0
   with:
     rules-repos: |
-      myorg/pqc-rules
+      myorg/pqc-rules@v1.0
+      myorg/pqc-rules-experimental
     rules-repos-token: ${{ secrets.RULES_TOKEN }}
+```
+
+**Gradle plugin:**
+
+```kotlin
+observer {
+    rulesRepos.set(listOf("myorg/pqc-rules@v1.0"))
+    rulesReposToken.set(providers.environmentVariable("RULES_TOKEN"))
+}
+```
+
+**Standalone CLI:**
+
+```bash
+observer --dir . --rules-repo myorg/pqc-rules
+observer --dir . --rules-repo myorg/pqc-rules@v1.0
 ```
 
 ### Cross-org with per-repo tokens
 
+When rules repos span multiple GitHub organizations, supply a per-repo token inline using `|`:
+
 ```yaml
-rules-repos: |
-  acme/pqc-rules@v1.0|${{ secrets.ACME_TOKEN }}
-  partner/shared-rules|${{ secrets.PARTNER_TOKEN }}
+- uses: GetQuantumDrive/Observer@v0.1.0
+  with:
+    rules-repos: |
+      acme/pqc-rules@v1.0|${{ secrets.ACME_TOKEN }}
+      partner/shared-rules|${{ secrets.PARTNER_TOKEN }}
 ```
 
-The single `rules-repos-token` applies to any entry without an inline `|token`.
+The single `rules-repos-token` applies to any entry that does not have an inline token.
 
 ## Suppressions
 
-Partners on classical crypto, legacy interop, migrations that straddle quarterly boundaries — Observer keeps findings in the report with a disposition, it doesn't hide them.
+Partners on classical crypto, legacy interop, migrations that straddle quarterly boundaries: Observer keeps findings in the report with a disposition, it doesn't hide them.
 
 ### Inline annotations
 
@@ -123,9 +199,9 @@ Partners on classical crypto, legacy interop, migrations that straddle quarterly
 Cipher c = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
 ```
 
-Applies to the next non-blank code line. `reason="..."` is required. `rule=...` is optional (absent = suppress any Observer finding on that line). `until=YYYY-MM-DD` is optional — after the date passes, the finding re-surfaces and counts toward `fail-on`.
+Applies to the next non-blank code line. `reason="..."` is required. `rule=...` is optional (absent = suppress any Observer finding on that line). `until=YYYY-MM-DD` is optional; after the date passes, the finding re-surfaces and counts toward `fail-on`.
 
-Works in `//`, `#`, `--`, `/* */`, `<!-- -->` comments — any language.
+Works in `//`, `#`, `--`, `/* */`, `<!-- -->` comments across any language.
 
 ### Config file
 
@@ -151,10 +227,10 @@ Globs are doublestar-style (`**` matches across directories).
 
 SARIF output includes:
 - Stable `partialFingerprints` so reformatting doesn't re-fire issues.
-- Suppressions mapped to SARIF's `suppressions[]` — honored natively by Sonar and GitHub.
+- Suppressions mapped to SARIF's `suppressions[]`, honored natively by Sonar and GitHub.
 - Domain fields (quantumThreat, primitive, composition) under `properties.observer.*`.
 
-Upload to GitHub Code Scanning:
+**Upload to GitHub Code Scanning:**
 
 ```yaml
 - uses: GetQuantumDrive/Observer@v0.1.0
@@ -166,6 +242,33 @@ Upload to GitHub Code Scanning:
     sarif_file: observer.sarif
 ```
 
+**Upload to SonarQube (10.3+ or SonarCloud):**
+
+Generate the SARIF file, then pass it to the SonarQube scanner via `sonar.sarifReportPaths`. Observer suppressions are preserved in the SARIF and honored by SonarQube's won't-fix / false-positive workflow.
+
+GitHub Actions:
+
+```yaml
+- uses: GetQuantumDrive/Observer@v0.1.0
+  with:
+    output: observer.sarif
+    output-format: sarif
+
+- uses: SonarSource/sonarqube-scan-action@v3
+  env:
+    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+  with:
+    args: -Dsonar.sarifReportPaths=observer.sarif
+```
+
+CLI with sonar-scanner:
+
+```bash
+observer --dir . --format sarif > observer.sarif
+sonar-scanner -Dsonar.sarifReportPaths=observer.sarif
+```
+
 ## Groundstate integration (optional)
 
 ```yaml
@@ -175,7 +278,7 @@ Upload to GitHub Code Scanning:
     report-token: ${{ secrets.GROUNDSTATE_TOKEN }}
 ```
 
-Groundstate aggregates reports across repositories, tracks compliance trends, and generates NIS2 Article 21 / DORA Annex II evidence packages. Only findings metadata is posted — your source code never leaves your pipeline.
+Groundstate aggregates reports across repositories, tracks compliance trends, and generates NIS2 Article 21 / DORA Annex II evidence packages. Only findings metadata is posted; your source code never leaves your pipeline.
 
 ## Inputs & outputs
 
@@ -185,7 +288,9 @@ Outputs: `findings`, `critical`, `high`, `compliance`, `report-json`.
 
 ## Supported languages
 
-Java, Python, JavaScript, TypeScript, Go. Extending to new languages is a rule-authoring task — see [Observer-rules](https://github.com/GetQuantumDrive/Observer-rules).
+Java, Python, JavaScript, TypeScript, Go.
+
+Adding support for a new language requires a scanner change in this repository (adding the file extension to the `Language` mapping in `pkg/scanner/types.go` - files with unrecognized extensions are skipped entirely, so rule authors cannot add new language support through rules alone), plus detection rules in [Observer-rules](https://github.com/GetQuantumDrive/Observer-rules). See [CONTRIBUTING.md](CONTRIBUTING.md#adding-a-new-language) for the full steps.
 
 ## Architecture
 
@@ -202,7 +307,7 @@ Your CI pipeline
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). New detection rules go in [Observer-rules](https://github.com/GetQuantumDrive/Observer-rules) — open an issue there with the language, algorithm, and a code sample.
+See [CONTRIBUTING.md](CONTRIBUTING.md). New detection rules go in [Observer-rules](https://github.com/GetQuantumDrive/Observer-rules); open an issue there with the language, algorithm, and a code sample.
 
 ## Security
 
@@ -210,4 +315,4 @@ See [SECURITY.md](SECURITY.md) for coordinated disclosure. Report vulnerabilitie
 
 ## License
 
-Apache-2.0 — see [LICENSE](LICENSE).
+Apache-2.0, see [LICENSE](LICENSE).

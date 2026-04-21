@@ -57,7 +57,7 @@ func Scan(root string, rules []Rule) (ScanReport, error) {
 	// Apply .observer.yml config exemptions across all findings after collection.
 	// Inline (in-file) exemptions are already applied per-file inside scanFile.
 	if exemptions, exErr := LoadConfigExemptions(root); exErr != nil {
-		// Invalid .observer.yml — surface via stderr; do not suppress.
+		// Invalid .observer.yml - surface via stderr; do not suppress.
 		fmt.Fprintf(os.Stderr, "warning: %v\n", exErr)
 	} else if len(exemptions) > 0 {
 		findings = applyConfig(findings, exemptions, today)

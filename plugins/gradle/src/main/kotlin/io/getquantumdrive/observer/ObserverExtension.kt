@@ -36,7 +36,7 @@ abstract class ObserverExtension {
     @get:Optional
     abstract val rulesDir: Property<String>
 
-    /** Additional local rule directories (highest priority — override repo rules with the same ID). */
+    /** Additional local rule directories (highest priority - override repo rules with the same ID). */
     @get:Input
     abstract val extraRulesDirs: ListProperty<String>
 
@@ -45,7 +45,7 @@ abstract class ObserverExtension {
     @get:Optional
     abstract val groundstateUrl: Property<String>
 
-    /** Bearer token for Groundstate authentication. Optional — prefer env var injection. */
+    /** Bearer token for Groundstate authentication. Optional - prefer env var injection. */
     @get:Input
     @get:Optional
     abstract val groundstateToken: Property<String>

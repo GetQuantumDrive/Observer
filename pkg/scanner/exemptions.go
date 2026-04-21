@@ -62,7 +62,7 @@ type inlineAnnotation struct {
 	RuleID string // empty = apply to any rule on the target line
 	Reason string
 	Until  string // ISO date
-	// Target line number (1-based) the annotation applies to — the next non-blank line.
+	// Target line number (1-based) the annotation applies to - the next non-blank line.
 	TargetLine int
 }
 
@@ -77,7 +77,7 @@ func scanInlineAnnotations(lines []string) map[int]inlineAnnotation {
 		}
 		ann, ok := parseInlineAnnotation(line)
 		if !ok {
-			// observer:ignore present but reason missing — emit a warning but do not suppress.
+			// observer:ignore present but reason missing - emit a warning but do not suppress.
 			fmt.Fprintf(os.Stderr, "warning: observer:ignore on line %d is missing reason=\"...\" (suppression skipped)\n", i+1)
 			continue
 		}
@@ -183,7 +183,7 @@ func setStatus(f *Finding, ex Exemption, today time.Time) {
 }
 
 // matchGlob reports whether path matches pattern using doublestar-style globs
-// (** matches zero or more path segments). An empty pattern matches everything —
+// (** matches zero or more path segments). An empty pattern matches everything,
 // useful for repo-wide rule-only exemptions.
 func matchGlob(pattern, path string) bool {
 	if pattern == "" {

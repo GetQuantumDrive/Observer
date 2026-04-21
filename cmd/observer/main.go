@@ -123,7 +123,7 @@ func main() {
 		fmt.Println(string(outputBytes))
 	}
 
-	// Groundstate only accepts Observer canonical JSON — the SARIF output is for
+	// Groundstate only accepts Observer canonical JSON; the SARIF output is for
 	// third-party tooling, not a replacement for the domain wire format.
 	if *gsURL != "" {
 		if err := groundstate.PostReport(*gsURL, *gsToken, reportJSON); err != nil {

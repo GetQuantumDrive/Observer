@@ -41,21 +41,27 @@ cd plugins/gradle
 ## Adding a new detection rule
 
 1. Open an issue in [Observer-rules](https://github.com/GetQuantumDrive/Observer-rules/issues/new) with the algorithm, language, and a minimal code sample.
-2. Follow the YAML schema including `quantum_threat` and `primitive` — both are required. See the [taxonomy table](README.md#taxonomy) for valid values.
+2. Follow the YAML schema including `quantum_threat` and `primitive`; both are required. See the [taxonomy table](README.md#taxonomy) for valid values.
 3. Add a test fixture that triggers (and does not trigger when suppressed).
 
 ## Adding a new language
 
-Language support is a scanner change (here, not Observer-rules).
+Language support requires a change in this repository. The scanner maps file extensions to a `Language` constant in `pkg/scanner/types.go`; files with unrecognized extensions return `LanguageUnknown` and are skipped entirely. This means rule authors cannot add support for a new language by writing rules alone - the extension mapping must exist in the scanner first.
 
-1. Add a file extension → `Language` mapping in `pkg/scanner/types.go`.
-2. Add rules for that language to Observer-rules.
-3. Update the README's *Supported languages* section.
+Steps:
+
+1. Add the new language constant to the `Language` type in `pkg/scanner/types.go`.
+2. Add its file extension(s) to the `extToLang` map in the same file.
+3. Open a PR here with those two changes.
+4. Add detection rules for the new language to [Observer-rules](https://github.com/GetQuantumDrive/Observer-rules).
+5. Update the README's *Supported languages* section.
+
+If you want to scan a language Observer does not yet support, open an issue in this repository (not Observer-rules) so the extension mapping can be added.
 
 ## Code style
 
 - Run `go vet ./...` and `gofmt -s -w .` before pushing.
-- Keep comments load-bearing — explain *why*, not *what*.
+- Keep comments load-bearing: explain *why*, not *what*.
 - Don't add speculative configuration or error handling for scenarios that can't happen.
 
 ## Pull requests
@@ -63,7 +69,7 @@ Language support is a scanner change (here, not Observer-rules).
 - Target the `main` branch.
 - Include tests for new behavior, especially scanner / exemption / SARIF changes.
 - Reference an issue in the description when one exists.
-- Sign off commits with `git commit -s` (DCO) — we require this for all contributions.
+- Sign off commits with `git commit -s` (DCO); we require this for all contributions.
 
 ## Release process (maintainers)
 
