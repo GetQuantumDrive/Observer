@@ -155,6 +155,7 @@ const (
 type Rule struct {
 	ID            string
 	Language      string
+	Extensions    []string      // file extensions that map to Language (e.g. [".rb", ".rake"])
 	Pattern       *regexp.Regexp
 	Algorithm     string
 	Severity      Severity      // optional - derived from QuantumThreat if empty

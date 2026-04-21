@@ -108,6 +108,35 @@ Create one or more YAML files in a directory of your choice:
 
 Severity is derived from `quantum_threat` + `primitive`; override it with an explicit `severity:` field if needed.
 
+### Adding rules for a language not built into Observer
+
+Observer has built-in file-extension mappings for Java, Python, JavaScript, TypeScript, and Go. For any other language, add an `extensions` field to at least one rule for that language. Observer reads the declared extensions from the loaded rules and starts scanning matching files - no scanner change needed.
+
+```yaml
+# One rule declares the extensions; all rules sharing the same language value
+# will automatically apply to those files.
+- id: ruby-openssl-rsa
+  language: ruby
+  extensions: [.rb, .rake]
+  pattern: 'OpenSSL::PKey::RSA\.new'
+  algorithm: RSA
+  quantum_threat: shor-broken
+  primitive: signature
+  message: "RSA key via OpenSSL::PKey::RSA is quantum-vulnerable."
+  migration: "Replace with an ML-DSA signing library."
+
+- id: ruby-openssl-ecdh
+  language: ruby
+  pattern: 'OpenSSL::PKey::EC\.new'
+  algorithm: ECDH
+  quantum_threat: shor-broken
+  primitive: key-exchange
+  message: "EC key exchange via OpenSSL::PKey::EC is quantum-vulnerable."
+  migration: "Replace with ML-KEM (FIPS 203)."
+```
+
+Extensions must include the leading dot (`.rb`, not `rb`). Built-in language mappings cannot be overridden by rules; rules may only add support for new extensions.
+
 ### Adding local rules
 
 Point the integration at the directory containing your YAML files.
@@ -288,9 +317,9 @@ Outputs: `findings`, `critical`, `high`, `compliance`, `report-json`.
 
 ## Supported languages
 
-Java, Python, JavaScript, TypeScript, Go.
+Java, Python, JavaScript, TypeScript, Go - built in.
 
-Adding support for a new language requires a scanner change in this repository (adding the file extension to the `Language` mapping in `pkg/scanner/types.go` - files with unrecognized extensions are skipped entirely, so rule authors cannot add new language support through rules alone), plus detection rules in [Observer-rules](https://github.com/GetQuantumDrive/Observer-rules). See [CONTRIBUTING.md](CONTRIBUTING.md#adding-a-new-language) for the full steps.
+Any other language can be supported by a rule set that declares `extensions` on at least one rule. No scanner changes required. See [Adding rules for a language not built into Observer](#adding-rules-for-a-language-not-built-into-observer) above.
 
 ## Architecture
 

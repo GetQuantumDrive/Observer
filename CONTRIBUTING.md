@@ -46,17 +46,25 @@ cd plugins/gradle
 
 ## Adding a new language
 
-Language support requires a change in this repository. The scanner maps file extensions to a `Language` constant in `pkg/scanner/types.go`; files with unrecognized extensions return `LanguageUnknown` and are skipped entirely. This means rule authors cannot add support for a new language by writing rules alone - the extension mapping must exist in the scanner first.
+No scanner change is required. Any rule set can add support for a new language by declaring an `extensions` field on at least one rule for that language. Observer builds the file-extension map from loaded rules at startup, so the new language is recognized as soon as rules that declare it are loaded.
 
-Steps:
+Example: to add Ruby support, publish a rules repo with at least one rule like this:
 
-1. Add the new language constant to the `Language` type in `pkg/scanner/types.go`.
-2. Add its file extension(s) to the `extToLang` map in the same file.
-3. Open a PR here with those two changes.
-4. Add detection rules for the new language to [Observer-rules](https://github.com/GetQuantumDrive/Observer-rules).
-5. Update the README's *Supported languages* section.
+```yaml
+- id: ruby-openssl-rsa
+  language: ruby
+  extensions: [.rb, .rake]
+  pattern: 'OpenSSL::PKey::RSA\.new'
+  quantum_threat: shor-broken
+  primitive: signature
+  algorithm: RSA
+  message: "RSA key via OpenSSL is quantum-vulnerable."
+  migration: "Replace with an ML-DSA signing library."
+```
 
-If you want to scan a language Observer does not yet support, open an issue in this repository (not Observer-rules) so the extension mapping can be added.
+Every other rule for `language: ruby` in the same (or any layered) rule set will automatically apply to `.rb` and `.rake` files once the extension mapping is established by the first loaded rule.
+
+The five built-in languages (Java, Python, JavaScript, TypeScript, Go) have their extension mappings compiled into the binary and cannot be overridden by rules - only new extensions can be added this way.
 
 ## Code style
 

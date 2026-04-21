@@ -11,16 +11,17 @@ import (
 )
 
 type yamlRule struct {
-	ID            string `yaml:"id"`
-	Language      string `yaml:"language"`
-	Pattern       string `yaml:"pattern"`
-	Algorithm     string `yaml:"algorithm"`
-	Severity      string `yaml:"severity"`
-	Message       string `yaml:"message"`
-	Migration     string `yaml:"migration"`
-	QuantumThreat string `yaml:"quantum_threat"`
-	Primitive     string `yaml:"primitive"`
-	Composition   bool   `yaml:"composition"`
+	ID            string   `yaml:"id"`
+	Language      string   `yaml:"language"`
+	Extensions    []string `yaml:"extensions"`
+	Pattern       string   `yaml:"pattern"`
+	Algorithm     string   `yaml:"algorithm"`
+	Severity      string   `yaml:"severity"`
+	Message       string   `yaml:"message"`
+	Migration     string   `yaml:"migration"`
+	QuantumThreat string   `yaml:"quantum_threat"`
+	Primitive     string   `yaml:"primitive"`
+	Composition   bool     `yaml:"composition"`
 }
 
 // LoadCustomRules loads all *.yaml rule files from one or more directories.
@@ -101,6 +102,7 @@ func parseRuleBytes(data []byte) ([]Rule, error) {
 		rules = append(rules, Rule{
 			ID:            yr.ID,
 			Language:      yr.Language,
+			Extensions:    yr.Extensions,
 			Pattern:       pat,
 			Algorithm:     yr.Algorithm,
 			Severity:      sev,

@@ -18,12 +18,39 @@ var skipDirs = map[string]bool{
 	".cache": true, "out": true,
 }
 
+// buildExtMap constructs a combined extension-to-language map from the
+// built-in extToLang table plus any extensions declared in the provided rules.
+// Rules may add support for new languages by declaring extensions; they cannot
+// override built-in mappings.
+func buildExtMap(rules []Rule) map[string]Language {
+	m := make(map[string]Language, len(extToLang)+8)
+	for ext, lang := range extToLang {
+		m[ext] = lang
+	}
+	for _, r := range rules {
+		if r.Language == "" {
+			continue
+		}
+		for _, ext := range r.Extensions {
+			ext = strings.ToLower(ext)
+			if !strings.HasPrefix(ext, ".") {
+				continue
+			}
+			if _, builtin := extToLang[ext]; !builtin {
+				m[ext] = Language(r.Language)
+			}
+		}
+	}
+	return m
+}
+
 // Scan walks root, applies all rules, and returns a ScanReport.
 func Scan(root string, rules []Rule) (ScanReport, error) {
 	start := time.Now()
 	var findings []Finding
 	filesScanned := 0
 	today := time.Now().UTC()
+	extMap := buildExtMap(rules)
 
 	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
@@ -36,8 +63,9 @@ func Scan(root string, rules []Rule) (ScanReport, error) {
 			return nil
 		}
 
-		lang := DetectLanguage(path)
-		if lang == LanguageUnknown {
+		ext := strings.ToLower(filepath.Ext(path))
+		lang, ok := extMap[ext]
+		if !ok {
 			return nil
 		}
 
