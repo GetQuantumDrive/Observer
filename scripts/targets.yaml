@@ -1,0 +1,136 @@
+targets:
+  # Core cryptography libraries — crypto is the entire product
+  - name: "Bouncy Castle Java"
+    repo: "bcgit/bc-java"
+    category: "crypto-library"
+    description: "The reference Java/JVM cryptography implementation"
+
+  - name: "Google Tink"
+    repo: "google/tink"
+    category: "crypto-library"
+    description: "Multi-language, misuse-resistant cryptographic API by Google"
+
+  # Identity & Access Management — heavy asymmetric crypto, signing, TLS
+  - name: "Keycloak"
+    repo: "keycloak/keycloak"
+    category: "iam"
+    description: "Red Hat open-source identity and access management"
+
+  - name: "WSO2 Identity Server"
+    repo: "wso2/product-is"
+    category: "iam"
+    description: "Enterprise identity and access management server"
+
+  - name: "Spring Security"
+    repo: "spring-projects/spring-security"
+    category: "framework"
+    description: "Authentication and authorization for Spring applications"
+
+  - name: "Apache Shiro"
+    repo: "apache/shiro"
+    category: "framework"
+    description: "Powerful and easy-to-use Java security framework"
+
+  # JWT / JOSE — signing, key wrapping, encryption
+  - name: "JJWT"
+    repo: "jwtk/jjwt"
+    category: "crypto-library"
+    description: "JSON Web Tokens (JWT) for Java and Android"
+
+  - name: "Nimbus JOSE+JWT"
+    repo: "connect2id/nimbus-jose-jwt"
+    category: "crypto-library"
+    description: "JOSE (JWS/JWE/JWK) and JWT library for Java"
+
+  # Security policy / multi-protocol auth
+  - name: "pac4j"
+    repo: "pac4j/pac4j"
+    category: "framework"
+    description: "Security engine for Java: authentication and authorization"
+
+  # Transport / networking — TLS handshake, cipher selection
+  - name: "Netty"
+    repo: "netty/netty"
+    category: "transport"
+    description: "Asynchronous event-driven network application framework"
+
+  - name: "Jetty"
+    repo: "eclipse/jetty.project"
+    category: "transport"
+    description: "Lightweight HTTP server and servlet container"
+
+  - name: "gRPC Java"
+    repo: "grpc/grpc-java"
+    category: "transport"
+    description: "Java implementation of gRPC with mutual TLS support"
+
+  - name: "OkHttp"
+    repo: "square/okhttp"
+    category: "transport"
+    description: "Square's efficient HTTP client with TLS pinning"
+
+  # Messaging / streaming — TLS, SASL, at-rest encryption
+  - name: "Apache Kafka"
+    repo: "apache/kafka"
+    category: "messaging"
+    description: "Distributed event streaming (TLS, SASL/SCRAM, ACLs)"
+
+  - name: "Apache Camel"
+    repo: "apache/camel"
+    category: "messaging"
+    description: "Integration framework with a dedicated crypto component"
+
+  # Web services — WS-Security, XML-DSig, XML-Enc
+  - name: "Apache CXF"
+    repo: "apache/cxf"
+    category: "framework"
+    description: "Web services framework with full WS-Security stack"
+
+  - name: "Apache Santuario"
+    repo: "apache/santuario-java"
+    category: "crypto-library"
+    description: "XML Digital Signature and XML Encryption for Java"
+
+  # Storage / databases — TLS, encryption at rest, Kerberos
+  - name: "Elasticsearch"
+    repo: "elastic/elasticsearch"
+    category: "storage"
+    description: "Distributed search engine with TLS and encrypted snapshots"
+
+  - name: "Apache Cassandra"
+    repo: "apache/cassandra"
+    category: "storage"
+    description: "Distributed NoSQL database with TLS and encryption at rest"
+
+  - name: "Apache Hadoop"
+    repo: "apache/hadoop"
+    category: "storage"
+    description: "Big-data platform using Kerberos and TLS extensively"
+
+  # Blockchain / DeFi — ECDSA, hashing, key derivation
+  - name: "BitcoinJ"
+    repo: "bitcoinj/bitcoinj"
+    category: "blockchain"
+    description: "Bitcoin protocol library for Java (ECDSA, SHA-256, BIP32)"
+
+  - name: "Web3j"
+    repo: "web3j/web3j"
+    category: "blockchain"
+    description: "Lightweight Ethereum/Web3 integration for Java"
+
+  - name: "Hyperledger Besu"
+    repo: "hyperledger/besu"
+    category: "blockchain"
+    description: "Enterprise Ethereum client with heavy cryptographic stack"
+
+  # Healthcare / regulated — HIPAA, secure data exchange
+  - name: "OpenMRS"
+    repo: "OpenMRS/openmrs-core"
+    category: "healthcare"
+    description: "Open-source medical records platform (HIPAA compliance)"
+
+  # Secure messaging — E2E encryption, forward secrecy
+  - name: "Signal Android"
+    repo: "signalapp/Signal-Android"
+    category: "messaging"
+    description: "Signal's Android client — end-to-end encrypted messaging"
