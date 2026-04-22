@@ -6,7 +6,8 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import org.gradle.process.ExecSpec
+import org.gradle.process.ExecOperations
+import javax.inject.Inject
 
 abstract class ObserverTask : DefaultTask() {
 
@@ -14,6 +15,9 @@ abstract class ObserverTask : DefaultTask() {
 
     @get:OutputFile
     abstract val reportFile: RegularFileProperty
+
+    @get:Inject
+    abstract val execOperations: ExecOperations
 
     @TaskAction
     fun scan() {
@@ -56,7 +60,7 @@ abstract class ObserverTask : DefaultTask() {
         }
 
         logger.lifecycle("Observer: scanning ${project.rootDir} with binary v$version")
-        project.exec { spec: ExecSpec -> spec.commandLine(cmd) }
+        execOperations.exec { commandLine(cmd) }
 
         // Summary parsing only works against canonical JSON; SARIF reports skip it.
         if (extension.outputFormat.getOrElse("json") == "json") {
