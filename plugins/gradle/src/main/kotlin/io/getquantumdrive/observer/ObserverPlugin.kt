@@ -10,7 +10,7 @@ class ObserverPlugin : Plugin<Project> {
         extension.failOn.convention("critical")
         extension.outputFormat.convention("json")
 
-        project.tasks.register("observerScan", ObserverTask::class.java) { task ->
+        project.tasks.register("observerScan", ObserverTask::class.java) { task: ObserverTask ->
             task.group       = "verification"
             task.description = "Scan for quantum-vulnerable cryptography using Observer."
             task.extension   = extension
