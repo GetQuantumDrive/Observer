@@ -12,6 +12,7 @@ coverage.html
 # Gradle plugin
 plugins/gradle/.gradle/*
 plugins/gradle/build/*
+plugins/gradle/.kotlin/
 
 # IDE / tools
 .claude/
