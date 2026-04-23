@@ -32,6 +32,21 @@ checksum:
   name_template: "checksums.txt"
   algorithm: sha256
 
+brews:
+  - name: observer
+    ids: [observer-cli]
+    repository:
+      owner: getquantumdrive
+      name: homebrew-pqc
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: "https://github.com/getquantumdrive/observer"
+    description: "Post-quantum cryptography scanner — detects quantum-vulnerable algorithms in source code"
+    license: "Apache-2.0"
+    install: |
+      bin.install "observer"
+    test: |
+      system "#{bin}/observer", "--version"
+
 changelog:
   sort: asc
   filters:
