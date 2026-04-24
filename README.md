@@ -249,10 +249,23 @@ Globs are doublestar-style (`**` matches across directories).
 
 ## Output formats
 
-| Format | Flag | Best for |
+| Format | Flag / input | Best for |
 |---|---|---|
 | Observer JSON (default) | `--format json` | Groundstate, Observer tooling, custom dashboards |
 | SARIF 2.1.0 | `--format sarif` | GitHub Code Scanning, SonarQube External Issues |
+| HTML | `--format html` | Self-contained report, artifact uploads, local review |
+
+### HTML report
+
+The HTML format produces a single self-contained file — no external dependencies. Open it in any browser.
+
+```bash
+observer --dir . --format html --output report.html
+```
+
+It shows stat cards, compliance badges (NIS2 / DORA / FIPS 203 / FIPS 204), an algorithm frequency bar chart, and findings grouped by file with collapsible code snippets and a severity filter.
+
+### SARIF
 
 SARIF output includes:
 - Stable `partialFingerprints` so reformatting doesn't re-fire issues.
@@ -333,6 +346,14 @@ Your CI pipeline
 │   └── report: JSON | SARIF
 └── optional: POST findings metadata → Groundstate
 ```
+
+## More documentation
+
+| Component | Reference |
+|---|---|
+| Standalone CLI | [cmd/observer/README.md](cmd/observer/README.md) — all flags, examples, output formats |
+| Gradle plugin | [plugins/gradle/README.md](plugins/gradle/README.md) — extension DSL, tasks, Groundstate |
+| Bulk scan scripts | [scripts/README.md](scripts/README.md) — scan-all, aggregate, html-report, run |
 
 ## Contributing
 
