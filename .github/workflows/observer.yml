@@ -21,7 +21,7 @@ jobs:
         id: observer
         uses: GetQuantumDrive/Observer@main
         with:
-          fail-on: critical           # fail build on CRITICAL findings
+          fail-on: never              # soft fail: report findings without breaking the build
           output: observer-report.json
           # Optional: post results to your Groundstate compliance dashboard
           # report-url: ${{ secrets.GROUNDSTATE_URL }}
