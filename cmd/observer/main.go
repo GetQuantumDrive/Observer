@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 
 	"github.com/getquantumdrive/observer/pkg/groundstate"
+	htmlreport "github.com/getquantumdrive/observer/pkg/report/html"
 	"github.com/getquantumdrive/observer/pkg/report/sarif"
 	"github.com/getquantumdrive/observer/pkg/scanner"
 )
@@ -35,7 +37,7 @@ func main() {
 	gsToken         := flag.String("groundstate-token", "", "Bearer token for the Groundstate server")
 	rulesReposToken := flag.String("rules-repos-token", "", "Default bearer token applied to --rules-repo entries without an inline token")
 	useBundled      := flag.Bool("use-bundled-rules", true, "If OBSERVER_BUNDLED_RULES_DIR is set, load rules from it before any --rules-repo entries")
-	format          := flag.String("format", "json", "Report output format: json (Observer canonical) | sarif (SARIF 2.1.0 for Sonar / GitHub Code Scanning)")
+	format          := flag.String("format", "json", "Report output format: json (Observer canonical) | sarif (SARIF 2.1.0) | html (self-contained HTML report)")
 	flag.Var(&rulesDirs, "rules-dir", "Local directory containing custom YAML rules (repeatable)")
 	flag.Var(&rulesRepos, "rules-repo", "GitHub rules repo (owner/repo[@ref][:path][|token]); repeatable, later entries override earlier ones")
 
@@ -109,8 +111,15 @@ func main() {
 			os.Exit(2)
 		}
 		outputBytes = sb
+	case "html":
+		var buf bytes.Buffer
+		if err := htmlreport.Render(report, cliVersion, &buf); err != nil {
+			fmt.Fprintf(os.Stderr, "could not render HTML: %v\n", err)
+			os.Exit(2)
+		}
+		outputBytes = buf.Bytes()
 	default:
-		fmt.Fprintf(os.Stderr, "unknown --format %q (want: json|sarif)\n", *format)
+		fmt.Fprintf(os.Stderr, "unknown --format %q (want: json|sarif|html)\n", *format)
 		os.Exit(2)
 	}
 

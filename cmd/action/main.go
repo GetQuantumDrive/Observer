@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/getquantumdrive/observer/pkg/groundstate"
+	htmlreport "github.com/getquantumdrive/observer/pkg/report/html"
 	"github.com/getquantumdrive/observer/pkg/report/sarif"
 	"github.com/getquantumdrive/observer/pkg/scanner"
 	gha "github.com/sethvargo/go-githubactions"
@@ -124,8 +126,16 @@ func main() {
 			} else {
 				outputBytes = sb
 			}
+		case "html":
+			var buf bytes.Buffer
+			if err := htmlreport.Render(report, cliVersion, &buf); err != nil {
+				a.Warningf("Could not render HTML: %v", err)
+				outputBytes = reportJSON
+			} else {
+				outputBytes = buf.Bytes()
+			}
 		default:
-			a.Warningf("Unknown output-format %q (want: json|sarif); writing json", outputFormat)
+			a.Warningf("Unknown output-format %q (want: json|sarif|html); writing json", outputFormat)
 			outputBytes = reportJSON
 		}
 		if err := os.WriteFile(outputFile, outputBytes, 0o644); err != nil {
