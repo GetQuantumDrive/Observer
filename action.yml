@@ -44,11 +44,11 @@ inputs:
     required: false
     default: ''
   output:
-    description: 'Write the scan report to this path (e.g. observer-report.json or observer.sarif)'
+    description: 'Write the scan report to this path (e.g. observer-report.json, observer.sarif, or observer-report.html)'
     required: false
     default: ''
   output-format:
-    description: 'Report format written to the output path. One of: json (Observer canonical) | sarif (for GitHub Code Scanning / SonarQube)'
+    description: 'Report format written to the output path. One of: json (Observer canonical) | sarif (for GitHub Code Scanning / SonarQube) | html (self-contained HTML report)'
     required: false
     default: 'json'
 

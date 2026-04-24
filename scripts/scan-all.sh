@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # scan-all.sh — clone every target in targets.yaml and run observer on it.
 #
-# Usage: scan-all.sh [--work-dir DIR] [--only SLUG,SLUG,...]
+# Usage: scan-all.sh [--work-dir DIR] [--only SLUG,SLUG,...] \
+#                    [--groundstate-url URL] [--groundstate-token TOKEN]
 #
 # Outputs one JSON file per project to $WORK_DIR/results/<slug>.json
 # Reads target list from scripts/targets.yaml (next to this script).
+# When --groundstate-url is given, each completed JSON is POSTed to the server.
 set -euo pipefail
 
 # ── paths ─────────────────────────────────────────────────────────────────────
@@ -14,12 +16,16 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # ── defaults (overridable via env or flags) ────────────────────────────────────
 WORK_DIR="${SCAN_WORK_DIR:-/tmp/observer-scan}"
 ONLY=""        # comma-separated slug filter, empty = scan all
+GS_URL=""      # Groundstate server base URL (optional)
+GS_TOKEN=""    # Groundstate bearer token (optional)
 
 # ── flag parsing ──────────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --work-dir) WORK_DIR="$2"; shift 2 ;;
-    --only)     ONLY="$2";     shift 2 ;;
+    --work-dir)          WORK_DIR="$2";  shift 2 ;;
+    --only)              ONLY="$2";      shift 2 ;;
+    --groundstate-url)   GS_URL="$2";   shift 2 ;;
+    --groundstate-token) GS_TOKEN="$2"; shift 2 ;;
     *) echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
 done
@@ -146,6 +152,20 @@ while IFS='|' read -r repo name category; do
       > "$result_file" 2>&1; then
     findings=$(python3 -c "import json,sys; d=json.load(open('$result_file')); print(d['risk_summary']['total'])" 2>/dev/null || echo "?")
     echo "  done — $findings total findings → $result_file"
+    # POST to Groundstate if configured
+    if [[ -n "$GS_URL" ]]; then
+      GS_ARGS=(-s -o /dev/null -w "%{http_code}" \
+               -X POST "${GS_URL}/api/reports" \
+               -H "Content-Type: application/json" \
+               --data-binary "@${result_file}")
+      [[ -n "$GS_TOKEN" ]] && GS_ARGS+=(-H "Authorization: Bearer ${GS_TOKEN}")
+      GS_STATUS=$(curl "${GS_ARGS[@]}" 2>/dev/null || echo "000")
+      if [[ "$GS_STATUS" -ge 200 && "$GS_STATUS" -lt 300 ]]; then
+        echo "  groundstate → posted (HTTP $GS_STATUS)"
+      else
+        echo "  groundstate → warning: server returned HTTP $GS_STATUS" >&2
+      fi
+    fi
     (( TOTAL++ )) || true
   else
     echo "  ERROR: observer exited non-zero for $repo" >&2
