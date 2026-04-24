@@ -16,8 +16,6 @@ scan-all.sh
 
 `aggregate.sh` and `html-report.sh` can also be called directly if you already have result files and only want to re-generate reports.
 
-`run.sh` is a backwards-compatibility shim that forwards all arguments to `scan-all.sh`.
-
 ## Requirements
 
 - `bash` 4+
