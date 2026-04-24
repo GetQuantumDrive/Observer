@@ -4,64 +4,30 @@ Bash scripts for scanning multiple repositories in one pass and producing aggreg
 
 ## Overview
 
+`scan-all.sh` is the single entry point. It runs the full pipeline internally:
+
 ```
-run.sh                 ← orchestrator: runs the full pipeline in one command
-├── scan-all.sh        ← clones each target and runs observer on it
-│     └── results/<slug>.json  (one file per project)
-├── aggregate.sh       ← combines all JSONs into a single report
-│     └── observer-report.{json,md}
-└── html-report.sh     ← converts aggregated JSON to HTML
-      └── html/index.html + html/<slug>.html
+scan-all.sh
+├── 1. build/locate observer binary
+├── 2. clone + scan each target  →  <work-dir>/results/<slug>.json
+├── 3. aggregate.sh              →  <out-prefix>.{json,md}
+└── 4. html-report.sh            →  <html-dir>/index.html + <html-dir>/<slug>.html
 ```
+
+`aggregate.sh` and `html-report.sh` can also be called directly if you already have result files and only want to re-generate reports.
+
+`run.sh` is a backwards-compatibility shim that forwards all arguments to `scan-all.sh`.
 
 ## Requirements
 
 - `bash` 4+
 - `jq` (required by `aggregate.sh` and `html-report.sh`)
-- `git` (required by `scan-all.sh`)
+- `git` (required for cloning)
 - `go` or a pre-built `observer` binary on `PATH`
-- `curl` (required for Groundstate posting in `scan-all.sh`)
-- `yq` or `python3` (optional; used by `scan-all.sh` to parse `targets.yaml` — falls back to `awk`)
+- `curl` (required for Groundstate posting)
+- `yq` or `python3` (optional; used to parse `targets.yaml` — falls back to `awk`)
 
-## `run.sh` — full pipeline
-
-Runs `scan-all.sh`, then `aggregate.sh`, then optionally `html-report.sh`.
-
-```bash
-./scripts/run.sh [options]
-```
-
-| Flag | Default | Description |
-|---|---|---|
-| `--work-dir DIR` | `/tmp/observer-scan` | Working directory for clones, results, and reports |
-| `--out PREFIX` | `<work-dir>/observer-report` | Output file prefix (produces `{prefix}.json` and `{prefix}.md`) |
-| `--only SLUGS` | _(all)_ | Comma-separated subset of repo slugs to scan (e.g. `bcgit-bc-java,google-tink`) |
-| `--html` | _(off)_ | Generate HTML report in addition to JSON + Markdown |
-| `--html-dir DIR` | `<work-dir>/html` | Directory to write HTML files into |
-| `--groundstate-url URL` | _(off)_ | POST each scan result to a Groundstate server |
-| `--groundstate-token TOK` | _(empty)_ | Bearer token for Groundstate authentication |
-
-**Examples:**
-
-```bash
-# Full scan of all targets
-./scripts/run.sh
-
-# Scan a subset, write results under ~/observer-results, produce HTML
-./scripts/run.sh \
-  --only bcgit-bc-java,google-tink \
-  --work-dir ~/observer-results \
-  --html
-
-# Full scan with Groundstate posting
-./scripts/run.sh \
-  --groundstate-url https://app.groundstate.io \
-  --groundstate-token "$GROUNDSTATE_TOKEN"
-```
-
-## `scan-all.sh` — clone and scan
-
-Reads `scripts/targets.yaml`, clones each repository, and runs `observer` on it. Writes one JSON file per project to `<work-dir>/results/<slug>.json`.
+## `scan-all.sh` — full pipeline
 
 ```bash
 ./scripts/scan-all.sh [options]
@@ -69,14 +35,47 @@ Reads `scripts/targets.yaml`, clones each repository, and runs `observer` on it.
 
 | Flag | Default | Description |
 |---|---|---|
-| `--work-dir DIR` | `/tmp/observer-scan` | Working directory |
-| `--only SLUGS` | _(all)_ | Comma-separated slug filter |
-| `--groundstate-url URL` | _(off)_ | POST each completed JSON to `{url}/api/reports` |
-| `--groundstate-token TOK` | _(empty)_ | Bearer token for Groundstate |
+| `--work-dir DIR` | `/tmp/observer-scan` | Working directory for clones, results, and reports |
+| `--out PREFIX` | `<work-dir>/observer-report` | Output file prefix for aggregated reports |
+| `--only SLUGS` | _(all)_ | Comma-separated subset of repo slugs (e.g. `bcgit-bc-java,google-tink`) |
+| `--html-dir DIR` | `<work-dir>/html` | Directory to write HTML files into |
+| `--groundstate-url URL` | _(off)_ | POST each completed scan JSON to `{url}/api/reports` |
+| `--groundstate-token TOK` | _(empty)_ | Bearer token for Groundstate authentication |
 
-The script builds the `observer` binary from source if it is not already present in the work directory or on `PATH`.
+**Examples:**
 
-Clones are shallow (`--depth 1 --filter=blob:none`) and cached — re-running skips already-cloned repos.
+```bash
+# Full scan of all targets
+./scripts/scan-all.sh
+
+# Custom work directory
+./scripts/scan-all.sh --work-dir ~/observer-results
+
+# Scan a subset of targets
+./scripts/scan-all.sh --only bcgit-bc-java,google-tink --work-dir /tmp/test
+
+# Full scan with Groundstate posting
+./scripts/scan-all.sh \
+  --groundstate-url https://app.groundstate.io \
+  --groundstate-token "$GROUNDSTATE_TOKEN"
+```
+
+### What it produces
+
+```
+<work-dir>/
+├── results/
+│   ├── bcgit-bc-java.json
+│   ├── google-tink.json
+│   └── ...
+├── observer-report.json    ← aggregated JSON
+├── observer-report.md      ← Markdown digest
+└── html/
+    ├── index.html          ← project overview
+    ├── bcgit-bc-java.html
+    ├── google-tink.html
+    └── ...
+```
 
 ### `targets.yaml` format
 
@@ -88,11 +87,13 @@ targets:
     description: "Widely-used Java crypto library"
 ```
 
-`repo` must be a GitHub `owner/repo` path. `name` and `category` are used in reports. `description` is informational.
+`repo` must be a GitHub `owner/repo` path. `name` and `category` appear in reports. `description` is informational.
 
-## `aggregate.sh` — combine results
+Clones are shallow (`--depth 1 --filter=blob:none`) and cached — re-running skips already-cloned repos.
 
-Takes a directory of per-project JSON files and produces an aggregated JSON report and a Markdown digest.
+## `aggregate.sh` — combine results (standalone)
+
+Called automatically by `scan-all.sh`. Run directly to re-generate reports from existing JSON files without re-scanning.
 
 ```bash
 ./scripts/aggregate.sh <results-dir> [output-prefix]
@@ -130,8 +131,8 @@ Takes a directory of per-project JSON files and produces an aggregated JSON repo
     "high": 892,
     "medium": 2314,
     "low": 412,
-    "by_quantum_threat": { "shor-broken": 2095, "classical-broken": 412, ... },
-    "top_algorithms": [{ "algorithm": "RSA", "count": 1204 }, ...],
+    "by_quantum_threat": { "shor-broken": 2095, "classical-broken": 412 },
+    "top_algorithms": [{ "algorithm": "RSA", "count": 1204 }],
     "compliance_summary": {
       "non_compliant_nis2": 18,
       "at_risk_nis2": 5,
@@ -142,18 +143,18 @@ Takes a directory of per-project JSON files and produces an aggregated JSON repo
     {
       "source": "bcgit/bc-java",
       "files_scanned": 3821,
-      "risk_summary": { "critical": 142, "high": 87, ... },
-      "compliance": { "nis2": "NON-COMPLIANT", "dora": "NON-COMPLIANT", ... },
-      "top_findings": [...],
+      "risk_summary": { "critical": 142, "high": 87 },
+      "compliance": { "nis2": "NON-COMPLIANT", "dora": "NON-COMPLIANT" },
+      "top_findings": [],
       "top_algorithm": "RSA"
     }
   ]
 }
 ```
 
-## `html-report.sh` — generate HTML
+## `html-report.sh` — generate HTML (standalone)
 
-Converts the aggregated JSON and per-project JSONs into a self-contained HTML report.
+Called automatically by `scan-all.sh`. Run directly to re-generate HTML from existing JSON files.
 
 ```bash
 ./scripts/html-report.sh <results-dir> <combined-json> [output-dir]
@@ -167,10 +168,10 @@ Converts the aggregated JSON and per-project JSONs into a self-contained HTML re
 
 **Outputs:**
 
-- `index.html` — overview with stat cards, compliance grid, algorithm bar chart, and a projects table linking to per-project pages
-- `<slug>.html` — per-project page with compliance badges, algorithm bars, and a full findings table
+- `index.html` — overview with stat cards, compliance grid, algorithm bar chart, and a projects table with links to per-project pages
+- `<slug>.html` — per-project page: compliance badges, algorithm bars, full findings table
 
-**Example:**
+**Example (re-generate HTML only):**
 
 ```bash
 ./scripts/html-report.sh \
@@ -180,11 +181,11 @@ Converts the aggregated JSON and per-project JSONs into a self-contained HTML re
 open /tmp/observer-scan/html/index.html
 ```
 
-No external CSS or JavaScript dependencies. All styles are inlined.
+No external CSS or JavaScript. All styles are inlined.
 
 ## Adding scan targets
 
-Edit `scripts/targets.yaml`:
+Edit `scripts/targets.yaml` and add an entry:
 
 ```yaml
 targets:
@@ -194,16 +195,15 @@ targets:
     description: "Core payment service"
 ```
 
-Push the file — the next `run.sh` invocation picks it up automatically.
+The next `scan-all.sh` run picks it up automatically.
 
 ## Running in CI
 
 ```yaml
 - name: Bulk PQC scan
   run: |
-    ./scripts/run.sh \
+    ./scripts/scan-all.sh \
       --work-dir /tmp/observer \
-      --html \
       --groundstate-url ${{ secrets.GROUNDSTATE_URL }} \
       --groundstate-token ${{ secrets.GROUNDSTATE_TOKEN }}
 
