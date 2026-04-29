@@ -17,7 +17,7 @@ The harvest-now-decrypt-later (HNDL) threat is not theoretical: RSA and ECC prot
 
 Real companies have mixed crypto: internal services migrate to PQC, but SWIFT, partner APIs, and legacy tools stay classical. Observer is built for this reality: it finds every usage, classifies it by quantum threat, and lets you suppress exceptions with audit metadata instead of pretending they don't exist.
 
-## Quickstart - GitHub Action
+## Quickstart
 
 ```yaml
 - uses: GetQuantumDrive/Observer@v0.1.0
@@ -25,32 +25,11 @@ Real companies have mixed crypto: internal services migrate to PQC, but SWIFT, p
     fail-on: critical
 ```
 
-Scans every push and PR, annotates vulnerable lines, fails the build on critical findings. Default rules are bundled into the Docker image, zero network on the default path.
+Scans every push and PR, annotates vulnerable lines, and fails the build on critical findings. `fail-on: critical` is the default — a bare `uses:` line with no `with:` block behaves identically. Default rules are bundled into the Docker image; zero network requests on the default scan path.
 
-## Quickstart - Gradle plugin
+## Other integrations
 
-```kotlin
-plugins {
-    id("io.getquantumdrive.observer") version "0.1.0"
-}
-
-observer {
-    failOn.set("critical")
-}
-```
-
-Then: `./gradlew observerScan`. The plugin downloads the Observer binary on first run (checksum-verified, cached under `~/.gradle/caches/observer/`).
-
-## Quickstart - standalone CLI
-
-```bash
-# Docker (recommended - bundled rules, no setup)
-docker run --rm -v $PWD:/src ghcr.io/getquantumdrive/observer:0.1.0 --dir /src
-
-# Native
-go install github.com/getquantumdrive/observer/cmd/observer@v0.1.0
-observer --dir . --rules-repo GetQuantumDrive/Observer-rules
-```
+Observer also ships a [Gradle plugin](plugins/gradle/README.md) and a [standalone CLI](cmd/observer/README.md) with the same rule set and output formats.
 
 ## Taxonomy
 
@@ -349,11 +328,12 @@ Your CI pipeline
 
 ## More documentation
 
-| Component | Reference |
+| Reference | Contents |
 |---|---|
-| Standalone CLI | [cmd/observer/README.md](cmd/observer/README.md) — all flags, examples, output formats |
-| Gradle plugin | [plugins/gradle/README.md](plugins/gradle/README.md) — extension DSL, tasks, Groundstate |
-| Bulk scan scripts | [scripts/README.md](scripts/README.md) — scan-all, aggregate, html-report, run |
+| [action.yml](action.yml) | Full input/output reference |
+| [cmd/observer/README.md](cmd/observer/README.md) | Standalone CLI — all flags, examples, output formats |
+| [plugins/gradle/README.md](plugins/gradle/README.md) | Gradle plugin — extension DSL, tasks, Groundstate |
+| [scripts/README.md](scripts/README.md) | Bulk scan scripts — scan-all, aggregate, html-report |
 
 ## Contributing
 
