@@ -1,15 +1,4 @@
 targets:
-  # Core cryptography libraries — crypto is the entire product
-  - name: "Bouncy Castle Java"
-    repo: "bcgit/bc-java"
-    category: "crypto-library"
-    description: "The reference Java/JVM cryptography implementation"
-
-  - name: "Google Tink"
-    repo: "google/tink"
-    category: "crypto-library"
-    description: "Multi-language, misuse-resistant cryptographic API by Google"
-
   # Identity & Access Management — heavy asymmetric crypto, signing, TLS
   - name: "Keycloak"
     repo: "keycloak/keycloak"
@@ -31,18 +20,6 @@ targets:
     category: "framework"
     description: "Powerful and easy-to-use Java security framework"
 
-  # JWT / JOSE — signing, key wrapping, encryption
-  - name: "JJWT"
-    repo: "jwtk/jjwt"
-    category: "crypto-library"
-    description: "JSON Web Tokens (JWT) for Java and Android"
-
-  - name: "Nimbus JOSE+JWT"
-    repo: "connect2id/nimbus-jose-jwt"
-    category: "crypto-library"
-    description: "JOSE (JWS/JWE/JWK) and JWT library for Java"
-
-  # Security policy / multi-protocol auth
   - name: "pac4j"
     repo: "pac4j/pac4j"
     category: "framework"
@@ -59,6 +36,11 @@ targets:
     category: "transport"
     description: "Lightweight HTTP server and servlet container"
 
+  - name: "Apache Tomcat"
+    repo: "apache/tomcat"
+    category: "transport"
+    description: "Dominant servlet container with JSSE/TLS configuration"
+
   - name: "gRPC Java"
     repo: "grpc/grpc-java"
     category: "transport"
@@ -68,6 +50,22 @@ targets:
     repo: "square/okhttp"
     category: "transport"
     description: "Square's efficient HTTP client with TLS pinning"
+
+  # Application servers & frameworks — TLS, security subsystems, secret management
+  - name: "WildFly"
+    repo: "wildfly/wildfly"
+    category: "framework"
+    description: "JBoss application server with extensive security subsystem"
+
+  - name: "Spring Boot"
+    repo: "spring-projects/spring-boot"
+    category: "framework"
+    description: "Convention-over-configuration framework; TLS auto-config, secret management"
+
+  - name: "Quarkus"
+    repo: "quarkusio/quarkus"
+    category: "framework"
+    description: "Cloud-native Java framework with security extensions"
 
   # Messaging / streaming — TLS, SASL, at-rest encryption
   - name: "Apache Kafka"
@@ -80,16 +78,16 @@ targets:
     category: "messaging"
     description: "Integration framework with a dedicated crypto component"
 
+  - name: "Apache ActiveMQ"
+    repo: "apache/activemq"
+    category: "messaging"
+    description: "Message broker with TLS and JAAS authentication"
+
   # Web services — WS-Security, XML-DSig, XML-Enc
   - name: "Apache CXF"
     repo: "apache/cxf"
     category: "framework"
     description: "Web services framework with full WS-Security stack"
-
-  - name: "Apache Santuario"
-    repo: "apache/santuario-java"
-    category: "crypto-library"
-    description: "XML Digital Signature and XML Encryption for Java"
 
   # Storage / databases — TLS, encryption at rest, Kerberos
   - name: "Elasticsearch"
@@ -107,30 +105,29 @@ targets:
     category: "storage"
     description: "Big-data platform using Kerberos and TLS extensively"
 
-  # Blockchain / DeFi — ECDSA, hashing, key derivation
-  - name: "BitcoinJ"
-    repo: "bitcoinj/bitcoinj"
-    category: "blockchain"
-    description: "Bitcoin protocol library for Java (ECDSA, SHA-256, BIP32)"
+  - name: "Apache ZooKeeper"
+    repo: "apache/zookeeper"
+    category: "storage"
+    description: "Distributed coordination service with TLS and SASL/Kerberos"
 
-  - name: "Web3j"
-    repo: "web3j/web3j"
-    category: "blockchain"
-    description: "Lightweight Ethereum/Web3 integration for Java"
+  - name: "Neo4j"
+    repo: "neo4j/neo4j"
+    category: "storage"
+    description: "Graph database with TLS and role-based auth"
 
-  - name: "Hyperledger Besu"
-    repo: "hyperledger/besu"
-    category: "blockchain"
-    description: "Enterprise Ethereum client with heavy cryptographic stack"
+  - name: "MongoDB Java Driver"
+    repo: "mongodb/mongo-java-driver"
+    category: "storage"
+    description: "Official MongoDB driver; TLS, x.509, SCRAM authentication"
+
+  # CI/CD — credentials store, TLS, plugin signing
+  - name: "Jenkins"
+    repo: "jenkinsci/jenkins"
+    category: "cicd"
+    description: "CI/CD platform with credentials management and TLS"
 
   # Healthcare / regulated — HIPAA, secure data exchange
   - name: "OpenMRS"
     repo: "OpenMRS/openmrs-core"
     category: "healthcare"
     description: "Open-source medical records platform (HIPAA compliance)"
-
-  # Secure messaging — E2E encryption, forward secrecy
-  - name: "Signal Android"
-    repo: "signalapp/Signal-Android"
-    category: "messaging"
-    description: "Signal's Android client — end-to-end encrypted messaging"
