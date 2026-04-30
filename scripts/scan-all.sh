@@ -171,10 +171,21 @@ while IFS='|' read -r repo name category; do
 
   # Clone (skip if already present)
   if [[ -d "$clone_dir/.git" ]]; then
-    echo "  clone already present, skipping git clone"
+    # A previous run may have failed mid-checkout (e.g. Windows long-path
+    # errors), leaving .git but an incomplete working tree. Detect missing
+    # tracked files and re-checkout before scanning.
+    if ! git -C "$clone_dir" diff --quiet HEAD -- 2>/dev/null; then
+      echo "  previous checkout incomplete, restoring working tree..."
+      git -C "$clone_dir" -c core.longpaths=true checkout -- . 2>&1 | \
+        sed 's/^/    /'
+    else
+      echo "  clone already present, skipping git clone"
+    fi
   else
     echo "  cloning $repo ..."
-    git clone --depth 1 --filter=blob:none \
+    # core.longpaths=true is required on Windows for repos with paths >260
+    # chars (e.g. Keycloak); harmless on Linux/macOS.
+    git -c core.longpaths=true clone --depth 1 --filter=blob:none \
       "https://github.com/$repo.git" "$clone_dir" 2>&1 | \
       sed 's/^/    /'
   fi
